@@ -1,50 +1,36 @@
 package util;
 
 
-import entity.Time;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import entity.SetMes;
+import entity.Time_e;
 
 import java.lang.reflect.Method;
 import java.text.DecimalFormat;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by wsdevotion on 15/10/15.
  */
 public class TurnTypeNum {
 
-    /***
-     * @param time time类型的对象
-     * @return 对象数据封装的结构
-     */
-    public static Map<Integer, Double> turnType(Time time) {
-        Integer all = 0;
-        Map<Integer, Double> map = new HashMap<Integer, Double>();
-        Integer[] s = new Integer[Data.Type_num];
-        Class<Time> time_class = (Class<Time>) time.getClass();
-        try {
-            for (int i = 0; i < Data.Type_num; i++) {
-                Method m = time_class.getMethod("getType_" + i);
-                s[i] = (Integer) m.invoke(time);
-                all += s[i];
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+
+
+    public static List<SetMes> turnSetMes(JSONObject json){
+        JSONArray jsonArray = json.getJSONArray("data");
+        List<SetMes> list = new ArrayList<>();
+        SetMes setMes = null;
+        for(int i=0; i<jsonArray.size(); i++){
+            setMes = new SetMes();
+            JSONObject jsonObject = JSON.parseObject(jsonArray.get(i).toString());
+            setMes.setType_id(jsonObject.getInteger("type_id"));
+            setMes.setChoose(jsonObject.getInteger("choose"));
+            setMes.setTime_e(jsonObject.getString("time"));
+            list.add(setMes);
         }
 
-        for (int i = 0; i < Data.Type_num; i++) {
-            if (all == 0) {
-                map.put(i, 0.00);
-                continue;
-            }
-            Double db = s[i] / Double.parseDouble(all + "");
-            DecimalFormat df = new DecimalFormat("0.00");//格式化小数
-            String bds = df.format(db);//返回的是String类型
-            Double d = Double.parseDouble(bds);
-            map.put(i, d);
-        }
-
-        return map;
-
+        return list;
     }
 }

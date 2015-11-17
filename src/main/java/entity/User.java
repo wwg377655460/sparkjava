@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Created by wsdevotion on 15/10/14.
  */
-@Table("s_user")
+@Table("users")
 public class User {
     @Id
     private int id;
@@ -17,15 +17,13 @@ public class User {
     private String password;
     @Column
     private String password_sec;
+    @Column
+    private String imgurl;
 
 
     @Many(target = Bill.class, field = "user_id")
     private List<Bill> bills;
 
-    @Column
-    private Double pay_money_bef;
-    @Column
-    private Double get_money_bef;
 
     public int getId() {
         return id;
@@ -67,19 +65,11 @@ public class User {
         this.bills = bills;
     }
 
-    public Double getPay_money_bef() {
-        return pay_money_bef;
+    public String getImgurl() {
+        return imgurl;
     }
 
-    public void setPay_money_bef(Double pay_money_bef) {
-        this.pay_money_bef = pay_money_bef;
-    }
-
-    public Double getGet_money_bef() {
-        return get_money_bef;
-    }
-
-    public void setGet_money_bef(Double get_money_bef) {
-        this.get_money_bef = get_money_bef;
+    public void setImgurl(String imgurl) {
+        this.imgurl = imgurl;
     }
 }

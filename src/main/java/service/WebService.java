@@ -2,18 +2,17 @@ package service;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
-import config.JsonTransformer;
-import dao.TestDao;
-import entity.Bill;
-import entity.Time;
-import entity.User;
+import entity.*;
+import exception.AuthException;
+import exception.InsertException;
+import exception.NullRequestException;
+import org.nutz.json.Json;
 import util.*;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static spark.Spark.*;
 
@@ -24,36 +23,51 @@ public class WebService extends BaseController {
 
 
     public static void main(String[] args) {
-        TestDao testDao = new TestDao();
 
         port(8080);
 
-        post("/hello", (req, res) -> "hello你好");
+//        before("/*", ((request, response) -> response.type("application/json")));
+
+        get("/hello", (req, res) -> "hello你好,SaveAPP");
 
         //登录
         post("/login", ((request, response) -> {
-            String jsons = request.body();
-            JSONObject jsonObject = JSON.parseObject(jsons);
-            String username = jsonObject.getString("username");
-            String password = jsonObject.getString("password");
-            JSONObject json = new JSONObject();
-            String password_m = Md5.MD5(password + Data.Salt);
+            JSONObject jsonObject = HttpUtils.parseJson(request.body());
+            String username = HttpUtils.getStrOrDie(jsonObject, "username");
+            String password = HttpUtils.getStrOrDie(jsonObject, "password");
+            //对密码进行加密处理
+            String password_m = Md5.MD5_Secure(password);
             User user = getUserDao().loginUser(username, password_m);
             if (user == null) {
-                json.put("result", "0");
+                throw new AuthException();
             } else {
-                json.put("result", "1");
+                return HttpUtils.returnMes("1");
             }
 
-            return json.toString();
+        }));
+
+        //上传图片地址
+        post("/updateimage/:username", ((request, response) -> {
+            JSONObject jsonObject = HttpUtils.parseJson(request.body());
+            String imgurl = HttpUtils.getStrOrDie(jsonObject, "imgurl");
+            String username = request.params(":username");//获取用户名
+            User user = getUserDao().getUserMes(username);
+            if (user == null) {
+                throw new AuthException();
+            }
+            user.setImgurl(imgurl);
+            getUserDao().updateUser(user);
+            return HttpUtils.returnMes("1");
         }));
 
         //获取用户账单信息
         post("/getBillsMessage", ((request, response) -> {
-            String jsons = request.body();
-            JSONObject jsonObject = JSON.parseObject(jsons);
-            String username = jsonObject.getString("username");
+            JSONObject jsonObject = HttpUtils.parseJson(request.body());
+            String username = HttpUtils.getStrOrDie(jsonObject, "username");
             List<Bill> userBill = getUserDao().getUserBill(username);
+            if (userBill == null) {
+                throw new AuthException();
+            }
             String bills = JSON.toJSONString(userBill);
             JSONArray bills_arr = (JSONArray) JSONArray.parse(bills);
             JSONObject json = new JSONObject();
@@ -65,10 +79,12 @@ public class WebService extends BaseController {
 
         //获取用户信息
         post("/getUserMessage", ((request, response) -> {
-            String jsons = request.body();
-            JSONObject jsonObject = JSON.parseObject(jsons);
-            String username = jsonObject.getString("username");
+            JSONObject jsonObject = HttpUtils.parseJson(request.body());
+            String username = HttpUtils.getStrOrDie(jsonObject, "username");
             User user = getUserDao().getUserMes(username);
+            if (user.getImgurl() == null) {
+                user.setImgurl("");
+            }
             user.setPassword("");
             String json = JSON.toJSONString(user);
             return json;
@@ -77,82 +93,112 @@ public class WebService extends BaseController {
 
         //上传用户账户信息
         post("/updateUserMessage", ((request, response) -> {
-            String jsonObject = request.body();
-            User user = JSON.parseObject(jsonObject.toString(), User.class);
+            User user = JSON.parseObject(request.body().toString(), User.class);
+            if(user == null){
+                throw new AuthException();
+            }
             User user_n = getUserDao().getUserMes(user.getUsername());
-            user_n.setGet_money_bef(user.getGet_money_bef());
-            user_n.setPay_money_bef(user.getPay_money_bef());
             getUserDao().updateUser(user_n);
-            JSONObject jsonObject1 = new JSONObject();
             List<Bill> bills = user.getBills();
             for (Bill bill : bills) {
                 //获取类型，更改用户统计表
-                int type = bill.getType();
+                int type = bill.getType_id();
                 String time = bill.getUpdate_time();
+                //更新所有用户数据表
                 int timetype = TimeUtil.turnTimeType(time);
-                Time times = getTimeDao().getTimeByType(timetype + "");
-                Class<Time> cl = (Class<Time>) times.getClass();
-                Method m1 = null;
-                Method m2 = null;
-                try {
-                    m1 = cl.getMethod("getType_" + type);
-                    int n = (Integer) m1.invoke(times);
-
-                    m2 = cl.getMethod("setType_" + type, int.class);
-                    m2.invoke(times, n + 1);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                getTimeDao().updateTimeByType(times);
+                Time_e time_e = new Time_e();
+                time_e.setType_id(type);
+                time_e.setTime_e(timetype + "");
+                time_e.setUser_id(user_n.getId());
+                time_e.setUpdate_time(time);
+                getTimeDao().insertTime_m(time_e);
+                //更新账单信息
                 bill.setUser_id(user_n.getId());
                 bill.setUpdate_time(System.currentTimeMillis() + "");
                 getBillDao().insertBill(bill);
             }
-            jsonObject1.put("result", "1");
-            return jsonObject1.toString();
+            return HttpUtils.returnMes("1");
         }));
 
         //注册
         post("/insert", (request, response) -> {
-                    String jsonObject = request.body();
-                    User user = JSON.parseObject(jsonObject.toString(), User.class);
-                    user.setPassword(Md5.MD5(user.getPassword() + Data.Salt));
+                    User user = HttpUtils.parseJsonObject(request.body().toString(), User.class);
+                    user.setPassword(Md5.MD5_Secure(user.getPassword()));
                     User user1 = getUserDao().getUserMes(user.getUsername());
-                    JSONObject json = new JSONObject();
-//            User user_new = getUserDao().insertUser(user);
                     if (user1 == null) {
                         //注册
                         getUserDao().insertUser(user);
-                        json.put("result", "1");
+                        return HttpUtils.returnMes("1");
                     } else {
-                        json.put("result", "0");
+                        throw new InsertException();
                     }
-//                    Set<String> headers = request.headers();
-                    response.type("text/plain");
-                    response.body(json.toString());
-//                    response.header("Content-Type", "text/plain;charset=utf-8");
-//                    response.header("contentType","application/json;charset=utf-8");
-                    return json.toString();
+
                 }
         );
 
+        //添加类型
+        post("/addType/:username", ((request, response) -> {
+            JSONObject jsonObject = HttpUtils.parseJson(request.body());
+            String name = HttpUtils.getStrOrDie(jsonObject, "name");
+            JSONObject jsonreturn = new JSONObject();
+            //获取类型
+            Type ty = getTypeDao().getTypeMes(name);
+            //类型存在就返回
+            if(ty != null){
+                jsonreturn.put("status","1");
+                jsonreturn.put("id", ty.getId());
+                return jsonreturn.toString();
+            }
+            //获取用户
+            String username = request.params(":username");
+            User user = getUserDao().getUserMes(username);
+            if(user == null){
+                throw new AuthException();
+            }
+            int user_id = user.getId();
+            Type type = new Type();
+            type.setName(name);
+            type.setUser_id(user_id);
+            jsonreturn.put("status","1");
+            jsonreturn.put("id", getTypeDao().insertType(type).getId());
+            return jsonreturn.toString();
+
+
+        }));
+
         //获取最可能的类型
         post("/getMaxType", "application/json", ((request, response) -> {
-            String jsonObject = request.body();
-            Time time_a = JSON.parseObject(jsonObject.toString(), Time.class);
-            int timeType = TimeUtil.turnTimeType(time_a.getTime());
-            Time time_p = getTimeDao().getTimeByType(timeType + "");
-            JSONObject json = new JSONObject();
-            Map<Integer, Double> map_a = TurnTypeNum.turnType(time_a);
-            Map<Integer, Double> map_p = TurnTypeNum.turnType(time_p);
-//        Map<Integer, Double> map_f = new HashMap<Integer, Double>();
-            Map<Integer, Double> map_f = MathUtil.getMap(timeType);
-            int type = MathUtil.getMaxType(map_p, map_a, map_f);
-            json.put("type", type);
+            JSONObject json = HttpUtils.parseJson(request.body());
+            List<SetMes> list_p = TurnTypeNum.turnSetMes(json);
+            int timeType = TimeUtil.turnTimeType(list_p.get(0).getTime_e());
+            List<SetMes> list_a = getTimeDao().getMesByTime(timeType + "");
+            List<SetMes> list_m = getSetmesDao().getSetMesByTime(timeType);
+            int type = MathUtil.getMaxType(list_p, list_a, list_m);
+            JSONObject jsonreturn = new JSONObject();
+            jsonreturn.put("type", type);
 
-            return json.toString();
+            return jsonreturn.toString();
         }));
+
+        exception(AuthException.class, ((e, request, response) -> {
+            response.body(HttpUtils.returnMes("-1"));
+        }));
+
+        exception(NullRequestException.class, ((e, request, response) -> {
+            response.body(HttpUtils.returnMes("-2"));
+        }));
+
+        exception(InsertException.class, ((e, request, response) -> {
+            response.body(HttpUtils.returnMes("0"));
+        }));
+
+        exception(JSONException.class, (e, request, response) -> {
+            response.body(HttpUtils.returnMes("-1"));
+        });
+
+        exception(Exception.class, (e, request, response) -> {
+            response.body(HttpUtils.returnMes("-1"));
+        });
     }
 
 

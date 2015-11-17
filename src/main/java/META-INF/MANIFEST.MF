@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Class-Path: junit-4.12.jar jetty-xml-9.3.2.v20150730.jar jetty-server-
+ 9.3.2.v20150730.jar nutz-1.b.52.jar hamcrest-core-1.3.jar commons-io-
+ 2.4.jar fastjson-1.2.7.jar jetty-security-9.3.2.v20150730.jar spark-c
+ ore-2.3.jar websocket-api-9.3.2.v20150730.jar javax.servlet-api-3.1.0
+ .jar mysql-connector-java-5.1.36.jar jetty-http-9.3.2.v20150730.jar s
+ lf4j-api-1.7.12.jar jetty-io-9.3.2.v20150730.jar websocket-client-9.3
+ .2.v20150730.jar slf4j-simple-1.7.12.jar commons-dbcp-1.4.jar jetty-s
+ ervlet-9.3.2.v20150730.jar commons-pool-1.5.4.jar websocket-server-9.
+ 3.2.v20150730.jar websocket-common-9.3.2.v20150730.jar websocket-serv
+ let-9.3.2.v20150730.jar jetty-webapp-9.3.2.v20150730.jar jetty-util-9
+ .3.2.v20150730.jar
+Main-Class: service.WebService
+

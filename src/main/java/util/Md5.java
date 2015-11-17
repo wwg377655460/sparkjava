@@ -7,10 +7,10 @@ import java.security.MessageDigest;
  * Created by wsdevotion on 15/10/14.
  */
 public class Md5 {
-    public final static String MD5(String s) {
+    public final static String MD5(String mes) {
         char hexDigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
         try {
-            byte[] btInput = s.getBytes();
+            byte[] btInput = mes.getBytes();
             // 获得MD5摘要算法的 MessageDigest 对象
             MessageDigest mdInst = MessageDigest.getInstance("MD5");
             // 使用指定的字节更新摘要
@@ -31,5 +31,9 @@ public class Md5 {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public final static String MD5_Secure(String mes){
+        return Md5.MD5(mes + Data.Salt);
     }
 }

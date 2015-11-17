@@ -1,10 +1,7 @@
 package service;
 
-import dao.BillDao;
-import dao.TimeDao;
-import dao.UserDao;
-import entity.Time;
-import entity.User;
+import dao.*;
+import entity.SetMes;
 
 /**
  * Created by wsdevotion on 15/10/18.
@@ -12,8 +9,10 @@ import entity.User;
 public class BaseController {
 
     private static BillDao billDao;
+    private static TypeDao typeDao;
     private static TimeDao timeDao;
     private static UserDao userDao;
+    private static SetMesDao setMesDao;
 
     public static BillDao getBillDao(){
         if(billDao==null){
@@ -21,6 +20,15 @@ public class BaseController {
             return billDao;
         }else{
             return billDao;
+        }
+    }
+
+    public static TypeDao getTypeDao(){
+        if(typeDao==null){
+            typeDao = new TypeDao();
+            return typeDao;
+        }else{
+            return typeDao;
         }
     }
 
@@ -39,6 +47,15 @@ public class BaseController {
             return userDao;
         }else{
             return userDao;
+        }
+    }
+
+    public static SetMesDao getSetmesDao(){
+        if(setMesDao==null){
+            setMesDao = new SetMesDao();
+            return setMesDao;
+        }else{
+            return setMesDao;
         }
     }
 }

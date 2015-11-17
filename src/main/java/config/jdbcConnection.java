@@ -3,6 +3,8 @@ package config;
 import org.apache.commons.dbcp.BasicDataSourceFactory;
 
 import javax.sql.DataSource;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -17,19 +19,20 @@ public final class jdbcConnection {
 
         private static DataSource myDataSource = null;
 
-        private jdbcConnection() {
+        public jdbcConnection() {
+
         }
+        private static String db_driver = "";
+        private static String db_url = "";
+        private static String db_userName = "";
+        private static String db_passWord = "";
 
         static {
             try {
-                Properties prop = new Properties();
-                // prop.setProperty("driverClassName", "com.mysql.jdbc.Driver");
-                prop.setProperty("driverClassName", "com.mysql.jdbc.Driver");
-                prop.setProperty("url","jdbc:mysql://localhost:3307/save?useUnicode=true&amp;characterEncoding=utf-8");
-                prop.setProperty("username","root");
-                prop.setProperty("password","root");
-
-                myDataSource = BasicDataSourceFactory.createDataSource(prop);
+                Properties pro = new Properties();
+                String path = jdbcConnection.class.getClassLoader().getResource("").toURI().getPath();
+                pro.load(new FileInputStream(path + "dbcpconfig.properties"));
+                myDataSource = BasicDataSourceFactory.createDataSource(pro);
             } catch (Exception e) {
                 throw new ExceptionInInitializerError(e);
             }

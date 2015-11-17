@@ -1,6 +1,6 @@
 import com.alibaba.fastjson.JSONObject;
 import org.junit.Test;
-import util.HttpRequestJ;
+import util.HttpRequest;
 
 /**
  * Created by wsdevotion on 15/10/18.
@@ -15,6 +15,6 @@ public class test_p {
 
         String url = "http://localhost:8080/testp";
 
-        HttpRequestJ.post(url, json.toString());
+        HttpRequest.sendPost(url, json.toString());
     }
 }

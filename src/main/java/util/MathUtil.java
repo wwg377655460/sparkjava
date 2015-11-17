@@ -1,5 +1,7 @@
 package util;
 
+import entity.SetMes;
+
 import java.util.*;
 
 /**
@@ -15,17 +17,25 @@ public class MathUtil {
      * @param map_f 设置的数据
      * @return 可能的类型
      */
-    public static int getMaxType(Map<Integer, Double> map_p, Map<Integer, Double> map_a, Map<Integer, Double> map_f) {
+    public static int getMaxType(List<SetMes> map_p, List<SetMes> map_a, List<SetMes> map_f) {
 
         Map<Integer, Double> map = new HashMap<Integer, Double>();
-        Integer[] sort = new Integer[Data.Type_num];
+//        Integer[] sort = new Integer[Data.Type_num];
         Double d;
+        List<Double> list_p = MathUtil.turnMapDou(map_p);
+        List<Double> list_a = MathUtil.turnMapDou(map_a);
+        List<Double> list_f = MathUtil.turnMapDou(map_f);
+        int maxnum = MathUtil.getMaxInThree(list_p.size(), list_a.size(), list_f.size());
 
-        for (int i = 0; i < Data.Type_num; i++) {
-            if(map_p==null) {
-                d = map_a.get(i) * 0.4 + map_f.get(i) * 0.2;
-            }else {
-                d = map_p.get(i) * 0.4 + map_a.get(i) * 0.4 + map_f.get(i) * 0.2;
+        for (int i = 1; i < maxnum; i++) {
+            if(list_a.size()>i && list_f.size()>i) {//个数都满足
+                d = list_p.get(i) * 0.4 + list_a.get(i) * 0.4 + list_f.get(i) * 0.2;
+            }else if(list_a.size()<=i) {
+                d = list_p.get(i) * 0.6 + list_f.get(i) * 0.4;
+            }else if(list_f.size()<=i){
+                d = list_p.get(i) * 0.5 + list_a.get(i) * 0.5;
+            }else{
+                d = list_p.get(i) * 1;
             }
             map.put(i, d);
         }
@@ -43,21 +53,34 @@ public class MathUtil {
         return max;
     }
 
-    /***
-     *
-     * @param timeType 时间的类型
-     * @return 时间类型所对应事件的可能性
-     */
-    public static Map<Integer, Double> getMap(int timeType) {
-        Map<Integer, Double> map = new HashMap<Integer, Double>();
-        for (int i = 0; i < Data.Type_num; i++) {
-            String s = Data.strings[timeType][i];
-            String mes[] = s.split(":");
-            Integer k = Integer.parseInt(mes[0]);
-            Double d = Double.parseDouble(mes[1]);
-            map.put(k, d);
+
+
+    //将个数变成占比
+    public static List<Double> turnMapDou(List<SetMes> list){
+        int all = 0;
+        int type_m = 0;
+        List<Double> time_double = new LinkedList<>();
+        for(SetMes setMes : list){
+            if(setMes.getType_id()>type_m){
+                type_m = setMes.getType_id();
+            }
+            all += setMes.getChoose();
+        }
+        if(all == 0){
+            return time_double;
+        }
+        for(int i=0; i<=type_m; i++){
+            time_double.add(i, 0.0);
+        }
+        for(SetMes setMes : list){
+            time_double.set(setMes.getType_id(), (double)setMes.getChoose() / all);
         }
 
-        return map;
+        return time_double;
+    }
+
+    //获取三个数字的最大值
+    public static int getMaxInThree(int i, int j, int k){
+        return i>j ? (i>k ? i:k) : (j>k ? j:k);
     }
 }

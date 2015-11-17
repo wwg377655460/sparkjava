@@ -7,14 +7,14 @@ import org.nutz.dao.entity.annotation.Table;
 /**
  * Created by wsdevotion on 15/10/14.
  */
-@Table("s_bill")
+@Table("bill")
 public class Bill {
     @Id
     private int id;
     @Column
     private Double money;
     @Column
-    private int type;
+    private int type_id;
     @Column
     private String update_time;
     @Column
@@ -38,12 +38,12 @@ public class Bill {
         this.money = money;
     }
 
-    public int getType() {
-        return type;
+    public int getType_id() {
+        return type_id;
     }
 
-    public void setType(int type) {
-        this.type = type;
+    public void setType_id(int type_id) {
+        this.type_id = type_id;
     }
 
     public String getRemark() {
