@@ -1,5 +1,12 @@
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.jayway.restassured.RestAssured;
+import static com.jayway.restassured.RestAssured.*;
+import static com.jayway.restassured.matcher.RestAssuredMatchers.*;
+import static org.hamcrest.Matchers.*;
+
+import com.jayway.restassured.parsing.Parser;
+import org.junit.Before;
 import org.junit.Test;
 import util.HttpRequest;
 import util.TimeUtil;
@@ -9,6 +16,28 @@ import util.TimeUtil;
  */
 public class UserTest {
 
+
+
+    @Before
+    public void setUp() {
+        RestAssured.baseURI= "http://localhost";
+        RestAssured.port = 8080;
+        RestAssured.basePath = "/";
+        RestAssured.registerParser("text/json", Parser.JSON);
+    }
+
+
+    @Test
+    public void insertUser1(){
+        JSONObject json = new JSONObject();
+        json.put("username","wer12312");
+        json.put("password","123456");
+        json.put("password_sec", "123");
+
+        given().headers("Accept", "application/json", "Content-Type", "application/json").request().body(json.toString()).
+                expect().statusCode(200).body("status",equalTo("1")).
+                when().post("/insert");
+    }
 
     @Test
     public void insertUser(){
@@ -33,7 +62,7 @@ public class UserTest {
         JSONObject json = new JSONObject();
         json.put("username","wer1234");
         json.put("password","123456");
-        String url = "http://localhost:8080/login";
+        String url = "http://121.42.209.19:8080/sparkjava/login";
 
         String param = json.toString();
         String s = HttpRequest.sendPost(url, param);
@@ -44,7 +73,7 @@ public class UserTest {
     public void getUserMessage(){
         JSONObject json = new JSONObject();
         json.put("username","wer1234");
-        String url = "http://localhost:8080/getUserMessage/67568579247FBFBB9C1B093D008F8608";
+        String url = "http://121.42.209.19:8080/sparkjava/getUserMessage/67568579247FBFBB9C1B093D008F8608";
 
         String param = json.toString();
         String s = HttpRequest.sendPost(url, param);
@@ -55,7 +84,7 @@ public class UserTest {
     public void getBillsMes(){
         JSONObject json = new JSONObject();
         json.put("username","wer1234");
-        String url = "http://localhost:8080/getBillsMessage/67568579247FBFBB9C1B093D008F8608";
+        String url = "http://121.42.209.19:8080/sparkjava/getBillsMessage/67568579247FBFBB9C1B093D008F8608";
 
         String param = json.toString();
         String s = HttpRequest.sendPost(url, param);
@@ -86,7 +115,7 @@ public class UserTest {
         JSONObject json1 = new JSONObject();
         json1.put("data", jsonArray);
 
-        String url = "http://localhost:8080/getMaxType";
+        String url = "http://121.42.209.19:8080/sparkjava/getMaxType";
         String param = json1.toString();
         System.out.println(param);
         String s = HttpRequest.sendPost(url, param);
@@ -98,7 +127,7 @@ public class UserTest {
         JSONObject json = new JSONObject();
         json.put("imgurl", "www.123.com");
 
-        String url = "http://localhost:8080/updateimage/wer12";
+        String url = "http://121.42.209.19:8080/sparkjava/updateimage/wer12";
         String param = json.toString();
         String s = HttpRequest.sendPost(url, param);
         System.out.println(s);
@@ -111,7 +140,7 @@ public class UserTest {
         JSONObject json = new JSONObject();
         json.put("name", "娱乐");
 
-        String url = "http://localhost:8080/addType/wer1";
+        String url = "http://121.42.209.19:8080/sparkjava/addType/wer1";
         String param = json.toString();
         String s = HttpRequest.sendPost(url, param);
         System.out.println(s);
@@ -135,7 +164,7 @@ public class UserTest {
         json2.put("update_time",System.currentTimeMillis());
         arr.add(json2);
         json.put("bills", arr);
-        String url = "http://localhost:8080/updateUserMessage/67568579247FBFBB9C1B093D008F8608";
+        String url = "http://121.42.209.19:8080/sparkjava/updateUserMessage/67568579247FBFBB9C1B093D008F8608";
 
         String param = json.toString();
 

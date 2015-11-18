@@ -17,9 +17,7 @@ import util.*;
 
 import java.util.List;
 
-import static spark.Spark.exception;
-import static spark.Spark.get;
-import static spark.Spark.post;
+import static spark.Spark.*;
 
 /**
  * Created by wsdevotion on 15/11/16.
@@ -29,6 +27,8 @@ public class Start extends BaseController implements SparkApplication {
 
     @Override
     public void init() {
+
+        before("/*", ((request, response) -> response.type("application/json")));
 
         get("/hello", (req, res) -> "hello你好,SaveAPP");
 
