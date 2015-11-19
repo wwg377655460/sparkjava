@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import exception.AuthException;
 import exception.NullRequestException;
+import redis.clients.jedis.Jedis;
+import spark.Request;
 
 import javax.xml.bind.ValidationException;
 import java.net.URLEncoder;
@@ -63,11 +65,31 @@ public class HttpUtils {
     }
 
 
-    public static JSONObject parseJson(String request) throws NullRequestException {
-        String body = request.trim();
-        if (StrUtils.isBlank(body)) {
+    public static JSONObject parseJson(Request request) throws NullRequestException {
+        String body = request.body();
+        String access_token = request.headers("access_token");
+        if (StrUtils.isBlank(body) || StrUtils.isBlank(access_token)) {
             throw new NullRequestException();
         }
+
+        JSONObject jsonObject = JSON.parseObject(body);
+        return jsonObject;
+    }
+
+    public static JSONObject parseJson(Request request,int type) throws NullRequestException {
+        String body = request.body();
+        if(type != 1) {
+            String access_token = request.headers("access_token");
+            if (StrUtils.isBlank(body) || StrUtils.isBlank(access_token)) {
+                throw new NullRequestException();
+            }
+        }else{
+            if (StrUtils.isBlank(body)) {
+                throw new NullRequestException();
+            }
+        }
+
+
         JSONObject jsonObject = JSON.parseObject(body);
         return jsonObject;
     }
@@ -83,5 +105,24 @@ public class HttpUtils {
         }
         return t;
     }
+
+    public static Boolean isAccess(Request request, String username){
+        Jedis jedis = null;
+        String access_token = request.headers("access_token");
+        try{
+            jedis = RedisFactory.get();
+            if(jedis.exists(access_token)){
+                if(jedis.get(access_token).equals(username))
+                    return true;
+            }
+            return false;
+        }finally {
+            if(jedis != null){
+                jedis.close();
+
+            }
+        }
+    }
+
 
 }

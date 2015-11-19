@@ -32,7 +32,7 @@ public class WebService extends BaseController {
 
         //登录
         post("/login", ((request, response) -> {
-            JSONObject jsonObject = HttpUtils.parseJson(request.body());
+            JSONObject jsonObject = HttpUtils.parseJson(request);
             String username = HttpUtils.getStrOrDie(jsonObject, "username");
             String password = HttpUtils.getStrOrDie(jsonObject, "password");
             //对密码进行加密处理
@@ -48,7 +48,7 @@ public class WebService extends BaseController {
 
         //上传图片地址
         post("/updateimage/:username", ((request, response) -> {
-            JSONObject jsonObject = HttpUtils.parseJson(request.body());
+            JSONObject jsonObject = HttpUtils.parseJson(request);
             String imgurl = HttpUtils.getStrOrDie(jsonObject, "imgurl");
             String username = request.params(":username");//获取用户名
             User user = getUserDao().getUserMes(username);
@@ -62,7 +62,7 @@ public class WebService extends BaseController {
 
         //获取用户账单信息
         post("/getBillsMessage", ((request, response) -> {
-            JSONObject jsonObject = HttpUtils.parseJson(request.body());
+            JSONObject jsonObject = HttpUtils.parseJson(request);
             String username = HttpUtils.getStrOrDie(jsonObject, "username");
             List<Bill> userBill = getUserDao().getUserBill(username);
             if (userBill == null) {
@@ -79,7 +79,7 @@ public class WebService extends BaseController {
 
         //获取用户信息
         post("/getUserMessage", ((request, response) -> {
-            JSONObject jsonObject = HttpUtils.parseJson(request.body());
+            JSONObject jsonObject = HttpUtils.parseJson(request);
             String username = HttpUtils.getStrOrDie(jsonObject, "username");
             User user = getUserDao().getUserMes(username);
             if (user.getImgurl() == null) {
@@ -138,7 +138,7 @@ public class WebService extends BaseController {
 
         //添加类型
         post("/addType/:username", ((request, response) -> {
-            JSONObject jsonObject = HttpUtils.parseJson(request.body());
+            JSONObject jsonObject = HttpUtils.parseJson(request);
             String name = HttpUtils.getStrOrDie(jsonObject, "name");
             JSONObject jsonreturn = new JSONObject();
             //获取类型
@@ -168,7 +168,7 @@ public class WebService extends BaseController {
 
         //获取最可能的类型
         post("/getMaxType", "application/json", ((request, response) -> {
-            JSONObject json = HttpUtils.parseJson(request.body());
+            JSONObject json = HttpUtils.parseJson(request);
             List<SetMes> list_p = TurnTypeNum.turnSetMes(json);
             int timeType = TimeUtil.turnTimeType(list_p.get(0).getTime_e());
             List<SetMes> list_a = getTimeDao().getMesByTime(timeType + "");

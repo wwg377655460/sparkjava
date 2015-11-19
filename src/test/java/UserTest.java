@@ -6,6 +6,7 @@ import static com.jayway.restassured.matcher.RestAssuredMatchers.*;
 import static org.hamcrest.Matchers.*;
 
 import com.jayway.restassured.parsing.Parser;
+import com.jayway.restassured.response.Response;
 import org.junit.Before;
 import org.junit.Test;
 import util.HttpRequest;
@@ -30,13 +31,14 @@ public class UserTest {
     @Test
     public void insertUser1(){
         JSONObject json = new JSONObject();
-        json.put("username","wer12312");
+        json.put("username","wer123123123");
         json.put("password","123456");
         json.put("password_sec", "123");
 
         given().headers("Accept", "application/json", "Content-Type", "application/json").request().body(json.toString()).
                 expect().statusCode(200).body("status",equalTo("1")).
-                when().post("/insert");
+                when().post("/user");
+
     }
 
     @Test
@@ -62,7 +64,7 @@ public class UserTest {
         JSONObject json = new JSONObject();
         json.put("username","wer1234");
         json.put("password","123456");
-        String url = "http://121.42.209.19:8080/sparkjava/login";
+        String url = "http://localhost:8080/login";
 
         String param = json.toString();
         String s = HttpRequest.sendPost(url, param);
@@ -72,12 +74,14 @@ public class UserTest {
     @Test
     public void getUserMessage(){
         JSONObject json = new JSONObject();
-        json.put("username","wer1234");
-        String url = "http://121.42.209.19:8080/sparkjava/getUserMessage/67568579247FBFBB9C1B093D008F8608";
+        json.put("username", "wer1234");
+//        String url = "http://121.42.209.19:8080/sparkjava/userMessage/67568579247FBFBB9C1B093D008F8608";
 
-        String param = json.toString();
-        String s = HttpRequest.sendPost(url, param);
-        System.out.println(s);
+        Response response = given().headers("access_token", "FD2E474EBBC6677EED79B2D3B0BBFF2B", "Accept", "application/json", "Content-Type", "application/json").request().
+                get("/userMessage/wer123");
+        System.out.println(response.statusCode());
+        System.out.println(response.body().asString());
+
     }
     //67568579247FBFBB9C1B093D008F8608
     @Test
@@ -86,9 +90,10 @@ public class UserTest {
         json.put("username","wer1234");
         String url = "http://121.42.209.19:8080/sparkjava/getBillsMessage/67568579247FBFBB9C1B093D008F8608";
 
-        String param = json.toString();
-        String s = HttpRequest.sendPost(url, param);
-        System.out.println(s);
+        Response response = given().headers("access_token", "0DEF0C7E1D117C8B10BE6F9C9266638F", "Accept", "application/json", "Content-Type", "application/json").request().
+                get("/billsMessage/wer1234");
+        System.out.println(response.statusCode());
+        System.out.println(response.body().asString());
     }
 
     @Test
@@ -115,22 +120,21 @@ public class UserTest {
         JSONObject json1 = new JSONObject();
         json1.put("data", jsonArray);
 
-        String url = "http://121.42.209.19:8080/sparkjava/getMaxType";
-        String param = json1.toString();
-        System.out.println(param);
-        String s = HttpRequest.sendPost(url, param);
-        System.out.println(s);
+        Response response = given().headers("access_token", "FD2E474EBBC6677EED79B2D3B0BBFF2B", "Accept", "application/json", "Content-Type", "application/json").request().body(json1.toString()).
+                post("/MaxType");
+        System.out.println(response.statusCode());
+        System.out.println(response.body().asString());
     }
 
     @Test
     public void updateImgurl(){
         JSONObject json = new JSONObject();
-        json.put("imgurl", "www.123.com");
+        json.put("imgurl", "www.1234.com");
 
-        String url = "http://121.42.209.19:8080/sparkjava/updateimage/wer12";
-        String param = json.toString();
-        String s = HttpRequest.sendPost(url, param);
-        System.out.println(s);
+        Response response = given().headers("access_token", "0DEF0C7E1D117C8B10BE6F9C9266638F", "Accept", "application/json", "Content-Type", "application/json").request().body(json.toString()).
+                put("/image/wer1234");
+        System.out.println(response.statusCode());
+        System.out.println(response.body().asString());
     }
 
 
@@ -140,10 +144,10 @@ public class UserTest {
         JSONObject json = new JSONObject();
         json.put("name", "娱乐");
 
-        String url = "http://121.42.209.19:8080/sparkjava/addType/wer1";
-        String param = json.toString();
-        String s = HttpRequest.sendPost(url, param);
-        System.out.println(s);
+        Response response = given().headers("access_token", "0DEF0C7E1D117C8B10BE6F9C9266638F", "Accept", "application/json", "Content-Type", "application/json").request().body(json.toString()).
+                post("/type/wer1234");
+        System.out.println(response.statusCode());
+        System.out.println(response.body().asString());
     }
 
     @Test
@@ -168,8 +172,9 @@ public class UserTest {
 
         String param = json.toString();
 
-//        System.out.println(param);
-        String s = HttpRequest.sendPost(url, param);
-        System.out.println(s);
+        Response response = given().headers("access_token", "0DEF0C7E1D117C8B10BE6F9C9266638F", "Accept", "application/json", "Content-Type", "application/json").request().body(json.toString()).
+        put("/userMessage");
+        System.out.println(response.statusCode());
+        System.out.println(response.body().asString());
     }
 }

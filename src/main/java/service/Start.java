@@ -4,18 +4,25 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
+import config.ConstMes;
+import config.GetProMessage;
 import entity.*;
+import exception.AccessException;
 import exception.AuthException;
 import exception.InsertException;
 import exception.NullRequestException;
 import javafx.application.Application;
 import javafx.stage.Stage;
+import org.apache.log4j.PropertyConfigurator;
+import redis.clients.jedis.Jedis;
+import spark.Access;
 import spark.Route;
 import spark.servlet.SparkApplication;
 import spark.servlet.SparkFilter;
 import util.*;
 
 import java.util.List;
+import java.util.UUID;
 
 import static spark.Spark.*;
 
@@ -28,13 +35,16 @@ public class Start extends BaseController implements SparkApplication {
     @Override
     public void init() {
 
+
+        initMes();
+
         before("/*", ((request, response) -> response.type("application/json")));
 
         get("/hello", (req, res) -> "hello你好,SaveAPP");
 
         //登录
         post("/login", ((request, response) -> {
-            JSONObject jsonObject = HttpUtils.parseJson(request.body());
+            JSONObject jsonObject = HttpUtils.parseJson(request, 1);
             String username = HttpUtils.getStrOrDie(jsonObject, "username");
             String password = HttpUtils.getStrOrDie(jsonObject, "password");
             JSONObject jsonreturn = new JSONObject();
@@ -44,8 +54,22 @@ public class Start extends BaseController implements SparkApplication {
             if (user == null) {
                 throw new AuthException();
             } else {
-                String access_token = Md5.MD5_Secure(user.getPassword());
-                jsonreturn.put("status","1");
+                String access_token = "";
+                //将token放入缓存
+                Jedis jedis = null;
+                try {
+                    jedis = RedisFactory.get();
+                    //username password 作为key
+                    access_token = Md5.MD5_Secure(username + password_m);
+                    if (!jedis.exists(Md5.MD5_Secure(username + password_m))) {
+                        jedis.setex(Md5.MD5_Secure(username + password_m), 360000, username);
+                    }
+                } finally {
+                    if (jedis != null) {
+                        jedis.close();
+                    }
+                }
+                jsonreturn.put("status", "1");
                 jsonreturn.put("access_token", access_token);
                 return jsonreturn.toString();
             }
@@ -53,11 +77,14 @@ public class Start extends BaseController implements SparkApplication {
         }));
 
         //上传图片地址
-        post("/updateimage/:username", ((request, response) -> {
-            JSONObject jsonObject = HttpUtils.parseJson(request.body());
+        put("/image/:username", ((request, response) -> {
+            JSONObject jsonObject = HttpUtils.parseJson(request);
             String imgurl = HttpUtils.getStrOrDie(jsonObject, "imgurl");
             String username = request.params(":username");//获取用户名
             User user = getUserDao().getUserMes(username);
+            if (!HttpUtils.isAccess(request, username)) {
+                throw new AccessException();
+            }
             if (user == null) {
                 throw new AuthException();
             }
@@ -67,16 +94,14 @@ public class Start extends BaseController implements SparkApplication {
         }));
 
         //获取用户账单信息
-        post("/getBillsMessage/:access_token", ((request, response) -> {
-            JSONObject jsonObject = HttpUtils.parseJson(request.body());
-            String username = HttpUtils.getStrOrDie(jsonObject, "username");
+        get("/billsMessage/:username", ((request, response) -> {
+            String username = request.params("username");
+            if (!HttpUtils.isAccess(request, username)) {
+                throw new AccessException();
+            }
             List<Bill> userBill = getUserDao().getUserBill(username);
             User user = getUserDao().getUserMes(username);
-            String access_token = request.params(":access_token");//验证用户的正确性
             if (userBill == null || user == null) {
-                throw new AuthException();
-            }
-            if(!Md5.MD5_Secure(user.getPassword()).equals(access_token)){
                 throw new AuthException();
             }
             String bills = JSON.toJSONString(userBill);
@@ -84,20 +109,17 @@ public class Start extends BaseController implements SparkApplication {
             JSONObject json = new JSONObject();
             json.put("status", 1);
             json.put("bills", bills_arr);
-            SparkFilter s = new SparkFilter();
             return json.toString();
         }));
 
         //获取用户信息
-        post("/getUserMessage/:access_token", ((request, response) -> {
-            JSONObject jsonObject = HttpUtils.parseJson(request.body());
-            String username = HttpUtils.getStrOrDie(jsonObject, "username");
-            String access_token = request.params(":access_token");//验证用户的正确性
-            User user = getUserDao().getUserMes(username);
-            if(user == null){
-                throw new AuthException();
+        get("/userMessage/:username", ((request, response) -> {
+            String username = request.params(":username");
+            if (!HttpUtils.isAccess(request, username)) {
+                throw new AccessException();
             }
-            if(!Md5.MD5_Secure(user.getPassword()).equals(access_token)){
+            User user = getUserDao().getUserMes(username);
+            if (user == null) {
                 throw new AuthException();
             }
             if (user.getImgurl() == null) {
@@ -112,14 +134,13 @@ public class Start extends BaseController implements SparkApplication {
 
 
         //上传用户账户信息
-        post("/updateUserMessage/:access_token", ((request, response) -> {
+        put("/userMessage", ((request, response) -> {
             User user = JSON.parseObject(request.body().toString(), User.class);
-            String access_token = request.params("access_token");
-            User user_n = getUserDao().getUserMes(user.getUsername());
-            if(user_n == null){
-                throw new AuthException();
+            if (!HttpUtils.isAccess(request, user.getUsername())) {
+                throw new AccessException();
             }
-            if(!Md5.MD5_Secure(user_n.getPassword()).equals(access_token)){
+            User user_n = getUserDao().getUserMes(user.getUsername());
+            if (user_n == null) {
                 throw new AuthException();
             }
             getUserDao().updateUser(user_n);
@@ -145,7 +166,7 @@ public class Start extends BaseController implements SparkApplication {
         }));
 
         //注册
-        post("/insert", (request, response) -> {
+        post("/user", (request, response) -> {
                     User user = HttpUtils.parseJsonObject(request.body().toString(), User.class);
                     user.setPassword(Md5.MD5_Secure(user.getPassword()));
                     User user1 = getUserDao().getUserMes(user.getUsername());
@@ -161,8 +182,13 @@ public class Start extends BaseController implements SparkApplication {
         );
 
         //添加类型
-        post("/addType/:username", ((request, response) -> {
-            JSONObject jsonObject = HttpUtils.parseJson(request.body());
+        post("/type/:username", ((request, response) -> {
+            String username = request.params(":username");
+            if(!HttpUtils.isAccess(request, username)){
+                throw new AccessException();
+            }
+
+            JSONObject jsonObject = HttpUtils.parseJson(request);
             String name = HttpUtils.getStrOrDie(jsonObject, "name");
             JSONObject jsonreturn = new JSONObject();
             //获取类型
@@ -174,7 +200,6 @@ public class Start extends BaseController implements SparkApplication {
                 return jsonreturn.toString();
             }
             //获取用户
-            String username = request.params(":username");
             User user = getUserDao().getUserMes(username);
             if (user == null) {
                 throw new AuthException();
@@ -191,37 +216,47 @@ public class Start extends BaseController implements SparkApplication {
         }));
 
         //获取最可能的类型
-        post("/getMaxType", "application/json", ((request, response) -> {
-            JSONObject json = HttpUtils.parseJson(request.body());
+        post("/MaxType", "application/json", ((request, response) -> {
+            JSONObject json = HttpUtils.parseJson(request);
             List<SetMes> list_p = TurnTypeNum.turnSetMes(json);
             int timeType = TimeUtil.turnTimeType(list_p.get(0).getTime_e());
             List<SetMes> list_a = getTimeDao().getMesByTime(timeType + "");
             List<SetMes> list_m = getSetmesDao().getSetMesByTime(timeType);
             int type = MathUtil.getMaxType(list_p, list_a, list_m);
             JSONObject jsonreturn = new JSONObject();
-            jsonreturn.put("status","1");
+            jsonreturn.put("status", "1");
             jsonreturn.put("type", type);
 
             return jsonreturn.toString();
         }));
 
         exception(AuthException.class, ((e, request, response) -> {
+            response.status(403);
             response.body(HttpUtils.returnMes("-1"));
         }));
 
+        exception(AccessException.class, ((e, request, response) -> {
+            response.status(405);
+            response.body(HttpUtils.returnMes("-2"));
+        }));
+
         exception(NullRequestException.class, ((e, request, response) -> {
+            response.status(403);
             response.body(HttpUtils.returnMes("-2"));
         }));
 
         exception(InsertException.class, ((e, request, response) -> {
+            response.status(401);
             response.body(HttpUtils.returnMes("0"));
         }));
 
         exception(JSONException.class, (e, request, response) -> {
+            response.status(403);
             response.body(HttpUtils.returnMes("-1"));
         });
 
         exception(Exception.class, (e, request, response) -> {
+            response.status(500);
             response.body(HttpUtils.returnMes("-1"));
         });
     }
@@ -231,5 +266,33 @@ public class Start extends BaseController implements SparkApplication {
     @Override
     public void destroy() {
 
+    }
+
+    private static void initMes() {
+        try {
+            //初始化日志
+            String path = GetProMessage.class.getClassLoader().getResource("").toURI().getPath();
+            PropertyConfigurator.configure(path + "log4j.properties");
+
+            //初始化配置信息
+
+            //Redis初始化
+            RedisFactory.init(GetProMessage.getProMessage("host", ConstMes.REDISPROMES), Integer.parseInt(GetProMessage.getProMessage("port", ConstMes.REDISPROMES)));
+
+            //清空redis
+            Jedis jedis = null;
+            try {
+                jedis = RedisFactory.get();
+                jedis.flushAll();
+            } finally {
+                if (jedis != null) {
+                    jedis.close();
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(100);
+        }
     }
 }
