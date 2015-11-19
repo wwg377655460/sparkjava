@@ -2,14 +2,12 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.jayway.restassured.RestAssured;
 import static com.jayway.restassured.RestAssured.*;
-import static com.jayway.restassured.matcher.RestAssuredMatchers.*;
 import static org.hamcrest.Matchers.*;
 
 import com.jayway.restassured.parsing.Parser;
 import com.jayway.restassured.response.Response;
 import org.junit.Before;
 import org.junit.Test;
-import util.HttpRequest;
 import util.TimeUtil;
 
 /**
@@ -49,9 +47,9 @@ public class UserTest {
         json.put("password_sec","123");
         String url = "http://localhost:8080/insert";
 
-        String param = json.toString();
-        String s = HttpRequest.sendPost(url, param);
-        System.out.println(s);
+//        String param = json.toString();
+//        String s = HttpRequest.sendPost(url, param);
+//        System.out.println(s);
     }
 
     @Test
@@ -66,9 +64,10 @@ public class UserTest {
         json.put("password","123456");
         String url = "http://localhost:8080/login";
 
-        String param = json.toString();
-        String s = HttpRequest.sendPost(url, param);
-        System.out.println(s);
+        Response response = given().headers("access_token", "FD2E474EBBC6677EED79B2D3B0BBFF2B", "Accept", "application/json", "Content-Type", "application/json").request().body(json.toString()).
+                post("/login");
+        System.out.println(response.statusCode());
+        System.out.println(response.body().asString());
     }
 
     @Test

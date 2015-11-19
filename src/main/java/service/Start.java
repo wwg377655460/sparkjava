@@ -11,18 +11,12 @@ import exception.AccessException;
 import exception.AuthException;
 import exception.InsertException;
 import exception.NullRequestException;
-import javafx.application.Application;
-import javafx.stage.Stage;
 import org.apache.log4j.PropertyConfigurator;
 import redis.clients.jedis.Jedis;
-import spark.Access;
-import spark.Route;
 import spark.servlet.SparkApplication;
-import spark.servlet.SparkFilter;
 import util.*;
 
 import java.util.List;
-import java.util.UUID;
 
 import static spark.Spark.*;
 
@@ -184,7 +178,7 @@ public class Start extends BaseController implements SparkApplication {
         //添加类型
         post("/type/:username", ((request, response) -> {
             String username = request.params(":username");
-            if(!HttpUtils.isAccess(request, username)){
+            if (!HttpUtils.isAccess(request, username)) {
                 throw new AccessException();
             }
 
@@ -260,7 +254,6 @@ public class Start extends BaseController implements SparkApplication {
             response.body(HttpUtils.returnMes("-1"));
         });
     }
-
 
 
     @Override
